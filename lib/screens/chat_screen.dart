@@ -26,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
         'senderEmail': user.email,
         'senderName': user.email?.split('@')[0] ?? 'Unknown',
         'timestamp': FieldValue.serverTimestamp(),
+        'isDeleted': false,
       });
 
       _messageController.clear();
@@ -45,6 +46,56 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     }
+  }
+
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('messages')
+          .doc(messageId)
+          .update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pesan berhasil dihapus')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal menghapus pesan')),
+        );
+      }
+    }
+  }
+
+  void _showDeleteConfirmation(String messageId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Pesan'),
+        content: const Text('Apakah Anda yakin ingin menghapus pesan ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteMessage(messageId);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _logout() async {
@@ -210,12 +261,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   controller: _scrollController,
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final messageData = messages[index].data() as Map<String, dynamic>;
+                    final messageDoc = messages[index];
+                    final messageData = messageDoc.data() as Map<String, dynamic>;
                     final text = messageData['text'] ?? '';
                     final senderEmail = messageData['senderEmail'] ?? '';
                     final senderName = messageData['senderName'] ?? senderEmail.split('@')[0];
                     final timestamp = messageData['timestamp'] as Timestamp?;
                     final isCurrentUser = senderEmail == currentUser?.email;
+                    final isDeleted = messageData['isDeleted'] ?? false;
 
                     return Container(
                       margin: const EdgeInsets.symmetric(
@@ -227,48 +280,60 @@ class _ChatScreenState extends State<ChatScreen> {
                             ? MainAxisAlignment.end
                             : MainAxisAlignment.start,
                         children: [
-                          Container(
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.75,
-                            ),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isCurrentUser
-                                  ? Colors.blue
-                                  : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (!isCurrentUser)
-                                  Text(
-                                    senderName,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey,
+                          GestureDetector(
+                            onLongPress: isCurrentUser && !isDeleted
+                                ? () => _showDeleteConfirmation(messageDoc.id)
+                                : null,
+                            child: Container(
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                              ),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isDeleted
+                                    ? Colors.grey[200]
+                                    : isCurrentUser
+                                        ? Colors.blue
+                                        : Colors.grey[300],
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!isCurrentUser)
+                                    Text(
+                                      senderName,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                  ),
-                                Text(
-                                  text,
-                                  style: TextStyle(
-                                    color: isCurrentUser
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                ),
-                                if (timestamp != null)
                                   Text(
-                                    _formatTime(timestamp.toDate()),
+                                    isDeleted ? 'Pesan telah dihapus' : text,
                                     style: TextStyle(
-                                      fontSize: 10,
-                                      color: isCurrentUser
-                                          ? Colors.white70
-                                          : Colors.grey,
+                                      color: isDeleted
+                                          ? Colors.grey[600]
+                                          : isCurrentUser
+                                              ? Colors.white
+                                              : Colors.black,
+                                      fontStyle: isDeleted ? FontStyle.italic : FontStyle.normal,
                                     ),
                                   ),
-                              ],
+                                  if (timestamp != null)
+                                    Text(
+                                      _formatTime(timestamp.toDate()),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isDeleted
+                                            ? Colors.grey[500]
+                                            : isCurrentUser
+                                                ? Colors.white70
+                                                : Colors.grey,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
