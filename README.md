@@ -1,6 +1,114 @@
 # Chat App Flutter
 
-Aplikasi chat real-time yang dibangun dengan Flutter dan Firebase, menyediakan fitur chat global dan private chat antar pengguna.
+Aplikasi chat real-time yang dibangun dengan Flutter dan Firebase.
+
+## 🚀 Setup untuk Development
+
+### Prerequisites
+- Flutter SDK (versi terbaru)
+- Android Studio / VS Code
+- Firebase account
+
+### Langkah Setup:
+
+1. **Clone Repository**
+   ```bash
+   git clone <repo-url>
+   cd uas
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Setup Firebase**
+   
+   a. Buat project baru di [Firebase Console](https://console.firebase.google.com/)
+   
+   b. Enable Authentication (Email/Password)
+   
+   c. Enable Firestore Database
+   
+   d. Install FlutterFire CLI:
+   ```bash
+   dart pub global activate flutterfire_cli
+   ```
+   
+   e. Configure Firebase:
+   ```bash
+   flutterfire configure
+   ```
+   
+   f. Pilih project Firebase Anda dan platform yang ingin didukung
+
+4. **Setup Android (Opsional)**
+   - Download `google-services.json` dari Firebase Console
+   - Letakkan di `android/app/google-services.json`
+
+5. **Run Application**
+   ```bash
+   flutter run
+   ```
+
+### Firestore Rules
+Tambahkan rules berikut di Firestore:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Global messages
+    match /messages/{messageId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Private chats
+    match /private_chats/{chatId}/messages/{messageId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.token.email in resource.data.participants ||
+         request.auth.token.email in request.resource.data.participants);
+    }
+  }
+}
+```
+
+## 🛠️ Troubleshooting
+
+### Firebase Configuration Error
+Jika terjadi error Firebase configuration:
+1. Pastikan `firebase_options.dart` ada
+2. Jalankan `flutterfire configure` ulang
+3. Restart aplikasi
+
+### Build Error
+Jika terjadi build error:
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
+
+### Android Build Issues
+```bash
+cd android
+./gradlew clean
+cd ..
+flutter run
+```
+
+## 📱 Features
+- ✅ Authentication (Login/Register)
+- ✅ Global Chat Room
+- ✅ Private Chat
+- ✅ Real-time Messaging
+- ✅ User Management
+
 
 ## 🚀 Fitur
 
