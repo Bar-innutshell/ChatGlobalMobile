@@ -22,7 +22,8 @@ Aplikasi chat real-time yang dibangun dengan Flutter dan Firebase.
    flutter pub get
    ```
 
-3. **Setup Firebase**
+
+3. **Setup Environment Variables (.env) untuk Firebase**
    
    a. Buat project baru di [Firebase Console](https://console.firebase.google.com/)
    
@@ -30,17 +31,30 @@ Aplikasi chat real-time yang dibangun dengan Flutter dan Firebase.
    
    c. Enable Firestore Database
    
-   d. Install FlutterFire CLI:
-   ```bash
-   dart pub global activate flutterfire_cli
+   d. Install package flutter_dotenv di pubspec.yaml:
+   ```yaml
+   dependencies:
+     flutter_dotenv: ^5.1.0
    ```
-   
-   e. Configure Firebase:
-   ```bash
-   flutterfire configure
+
+   e. Copy file `.env.example` ke `.env` dan isi dengan konfigurasi Firebase Anda:
+   ```env
+   FIREBASE_API_KEY_WEB=isi_api_key_web_anda
+   FIREBASE_APP_ID_WEB=isi_app_id_web_anda
+   FIREBASE_MESSAGING_SENDER_ID=isi_sender_id_anda
+   FIREBASE_PROJECT_ID=isi_project_id_anda
+   FIREBASE_AUTH_DOMAIN=isi_auth_domain_anda
+   FIREBASE_STORAGE_BUCKET=isi_storage_bucket_anda
+   FIREBASE_MEASUREMENT_ID_WEB=isi_measurement_id_web_anda
+   # dst untuk android, ios, windows
    ```
-   
-   f. Pilih project Firebase Anda dan platform yang ingin didukung
+
+   f. Tambahkan `.env` ke `.gitignore` agar tidak ter-push ke repo:
+   ```ignore
+   .env
+   ```
+
+   g. Pastikan file `firebase_options.dart` sudah membaca konfigurasi dari `.env` menggunakan `flutter_dotenv` (lihat contoh di repo).
 
 4. **Setup Android (Opsional)**
    - Download `google-services.json` dari Firebase Console
@@ -80,11 +94,12 @@ service cloud.firestore {
 
 ## 🛠️ Troubleshooting
 
+
 ### Firebase Configuration Error
 Jika terjadi error Firebase configuration:
-1. Pastikan `firebase_options.dart` ada
-2. Jalankan `flutterfire configure` ulang
-3. Restart aplikasi
+1. Pastikan file `.env` sudah ada dan berisi konfigurasi yang benar
+2. Pastikan package `flutter_dotenv` sudah diinstall dan di-load di `main.dart`
+3. Restart aplikasi setelah mengubah `.env`
 
 ### Build Error
 Jika terjadi build error:
@@ -102,12 +117,14 @@ cd ..
 flutter run
 ```
 
+
 ## 📱 Features
 - ✅ Authentication (Login/Register)
 - ✅ Global Chat Room
 - ✅ Private Chat
 - ✅ Real-time Messaging
 - ✅ User Management
+- ✅ API key Firebase tidak terekspos di repo (menggunakan .env)
 
 
 ## 🚀 Fitur
@@ -231,9 +248,12 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 ```
 
-## 🔒 Keamanan Firestore Rules
 
-Pastikan Firestore rules sudah dikonfigurasi dengan benar:
+## 🔒 Keamanan
+
+- **API key Firebase tidak pernah di-push ke repo.** Semua konfigurasi disimpan di file `.env` yang di-ignore dari version control.
+- **Setiap kontributor WAJIB membuat file `.env` sendiri sesuai instruksi setup.**
+- **Pastikan Firestore rules sudah dikonfigurasi dengan benar:**
 
 ```javascript
 rules_version = '2';
@@ -279,6 +299,7 @@ service cloud.firestore {
 - Daftar pengguna untuk memulai chat
 - UI konsisten dengan chat global
 
+
 ## 🤝 Kontribusi
 
 1. Fork repository
@@ -286,6 +307,7 @@ service cloud.firestore {
 3. Commit perubahan (`git commit -am 'Tambah fitur baru'`)
 4. Push ke branch (`git push origin feature/fitur-baru`)
 5. Buat Pull Request
+6. **JANGAN pernah commit file `.env` atau API key ke repo!**
 
 ## 📄 Lisensi
 
