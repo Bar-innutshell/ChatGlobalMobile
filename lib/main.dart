@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-
 import 'firebase_options.dart';
 import 'screens/auth_wrapper.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    // Load .env file
     await dotenv.load();
-    // Example: print API key from .env
-    print('FIREBASE_API_KEY_WEB: [32m${dotenv.env['FIREBASE_API_KEY_WEB']}[0m');
+    print('FIREBASE_API_KEY_WEB: \x1b[32m${dotenv.env['FIREBASE_API_KEY_WEB']}\x1b[0m');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    runApp(const MainApp());
+    runApp(
+      ChangeNotifierProvider(
+        create: (_) => ThemeNotifier(),
+        child: const MainApp(),
+      ),
+    );
   } catch (e, stack) {
     print('Startup error: $e');
     runApp(MaterialApp(
@@ -43,17 +44,35 @@ void main() async {
   }
 }
 
+class ThemeNotifier extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  ThemeMode get themeMode => _themeMode;
+
+  void toggleTheme() {
+    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    notifyListeners();
+  }
+}
+
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
     return MaterialApp(
       title: 'Chat App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        brightness: Brightness.light,
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.blue,
+      ),
+      themeMode: themeNotifier.themeMode,
       home: const AuthWrapper(),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart';
+import '../widgets/theme_switch_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         title: const Text('Login'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: const [ThemeSwitchButton()],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

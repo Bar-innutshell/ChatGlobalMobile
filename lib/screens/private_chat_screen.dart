@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/theme_switch_button.dart';
 
 class PrivateChatScreen extends StatefulWidget {
   final String targetUserEmail;
@@ -127,6 +128,7 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
         title: Text('Chat dengan ${widget.targetUserName}'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: const [ThemeSwitchButton()],
       ),
       body: Column(
         children: [
@@ -227,7 +229,7 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
                                         )
                                       : Text(
                                           text,
-                                          style: const TextStyle(fontSize: 16),
+                                          style: const TextStyle(fontSize: 16, color: Colors.black),
                                         ),
                                   const SizedBox(height: 4),
                                   Text(

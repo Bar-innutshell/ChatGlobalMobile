@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_list_screen.dart';
+import '../widgets/theme_switch_button.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -139,6 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
               );
             },
           ),
+          const ThemeSwitchButton(),
           PopupMenuButton(
             icon: const Icon(Icons.more_vert),
             itemBuilder: (context) => [

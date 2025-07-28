@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/theme_switch_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -92,6 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: const Text('Daftar'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: const [ThemeSwitchButton()],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
