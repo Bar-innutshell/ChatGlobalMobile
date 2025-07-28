@@ -17,6 +17,54 @@ class PrivateChatScreen extends StatefulWidget {
 }
 
 class _PrivateChatScreenState extends State<PrivateChatScreen> {
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('private_chats')
+          .doc(_chatId)
+          .collection('messages')
+          .doc(messageId)
+          .update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pesan berhasil dihapus')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal menghapus pesan')),
+        );
+      }
+    }
+  }
+
+  void _showDeleteConfirmation(String messageId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Pesan'),
+        content: const Text('Apakah Anda yakin ingin menghapus pesan ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteMessage(messageId);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -138,76 +186,63 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
                   }
                 });
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final messageData = messages[index].data() as Map<String, dynamic>;
-                    final text = messageData['text'] ?? '';
-                    final senderEmail = messageData['senderEmail'] ?? '';
-                    final senderName = messageData['senderName'] ?? '';
-                    final timestamp = messageData['timestamp'] as Timestamp?;
-                    final isCurrentUser = senderEmail == currentUser?.email;
+                    return ListView.builder(
+                      controller: _scrollController,
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final doc = messages[index];
+                        final messageData = doc.data() as Map<String, dynamic>;
+                        final text = messageData['text'] ?? '';
+                        final senderEmail = messageData['senderEmail'] ?? '';
+                        final senderName = messageData['senderName'] ?? '';
+                        final timestamp = messageData['timestamp'] as Timestamp?;
+                        final isCurrentUser = senderEmail == currentUser?.email;
+                        final isDeleted = messageData['isDeleted'] == true;
 
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: isCurrentUser
-                            ? MainAxisAlignment.end
-                            : MainAxisAlignment.start,
-                        children: [
-                          Container(
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.75,
-                            ),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isCurrentUser
-                                  ? Colors.blue
-                                  : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (!isCurrentUser)
-                                  Text(
-                                    senderName,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey,
+                        return Align(
+                          alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+                          child: GestureDetector(
+                            onLongPress: isCurrentUser && !isDeleted
+                                ? () => _showDeleteConfirmation(doc.id)
+                                : null,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: isCurrentUser ? Colors.blue[100] : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!isCurrentUser)
+                                    Text(
+                                      senderName,
+                                      style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.bold),
                                     ),
-                                  ),
-                                Text(
-                                  text,
-                                  style: TextStyle(
-                                    color: isCurrentUser
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                ),
-                                if (timestamp != null)
+                                  isDeleted
+                                      ? const Text(
+                                          'Pesan telah dihapus',
+                                          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                                        )
+                                      : Text(
+                                          text,
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    _formatTime(timestamp.toDate()),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isCurrentUser
-                                          ? Colors.white70
-                                          : Colors.grey,
-                                    ),
+                                    timestamp != null
+                                        ? _formatTime(timestamp.toDate())
+                                        : '',
+                                    style: const TextStyle(fontSize: 10, color: Colors.black45),
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     );
-                  },
-                );
               },
             ),
           ),

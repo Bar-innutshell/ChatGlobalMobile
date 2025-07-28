@@ -10,13 +10,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    print('Memuat .env...');
+    // Load .env file
     await dotenv.load();
-    print('ENV loaded: ' + dotenv.env.toString());
+    // Example: print API key from .env
+    print('FIREBASE_API_KEY_WEB: [32m${dotenv.env['FIREBASE_API_KEY_WEB']}[0m');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('Firebase initialized');
     runApp(const MainApp());
   } catch (e, stack) {
     print('Startup error: $e');
