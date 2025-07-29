@@ -57,7 +57,7 @@ class _UserListScreenState extends State<UserListScreen> {
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
-                    child: Text('Terjadi kesalaha'),
+                    child: Text('Terjadi kesalahan'),
                   );
                 }
 
