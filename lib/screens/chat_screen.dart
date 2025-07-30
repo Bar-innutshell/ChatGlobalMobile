@@ -111,6 +111,103 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _editMessage(String messageId, String currentText) async {
+    final TextEditingController editController = TextEditingController(text: currentText);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Pesan'),
+        content: TextField(
+          controller: editController,
+          decoration: const InputDecoration(
+            hintText: 'Edit pesan Anda...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              editController.dispose();
+              Navigator.pop(context);
+            },
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newText = editController.text.trim();
+              if (newText.isNotEmpty && newText != currentText) {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('messages')
+                      .doc(messageId)
+                      .update({
+                    'text': newText,
+                    'isEdited': true,
+                    'editedAt': FieldValue.serverTimestamp(),
+                  });
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pesan berhasil diedit')),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Gagal mengedit pesan')),
+                    );
+                  }
+                }
+              }
+              editController.dispose();
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.blue,
+            ),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMessageOptions(String messageId, String messageText, bool isDeleted) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isDeleted) ...[
+              ListTile(
+                leading: const Icon(Icons.edit, color: Colors.blue),
+                title: const Text('Edit Pesan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _editMessage(messageId, messageText);
+                },
+              ),
+              const Divider(),
+            ],
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Hapus Pesan', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteConfirmation(messageId);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -271,6 +368,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     final timestamp = messageData['timestamp'] as Timestamp?;
                     final isCurrentUser = senderEmail == currentUser?.email;
                     final isDeleted = messageData['isDeleted'] ?? false;
+                    final isEdited = messageData['isEdited'] ?? false;
 
                     return Container(
                       margin: const EdgeInsets.symmetric(
@@ -283,8 +381,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             : MainAxisAlignment.start,
                         children: [
                           GestureDetector(
-                            onLongPress: isCurrentUser && !isDeleted
-                                ? () => _showDeleteConfirmation(messageDoc.id)
+                            onLongPress: isCurrentUser
+                                ? () => _showMessageOptions(messageDoc.id, text, isDeleted)
                                 : null,
                             child: Container(
                               constraints: BoxConstraints(
@@ -322,18 +420,36 @@ class _ChatScreenState extends State<ChatScreen> {
                                       fontStyle: isDeleted ? FontStyle.italic : FontStyle.normal,
                                     ),
                                   ),
-                                  if (timestamp != null)
-                                    Text(
-                                      _formatTime(timestamp.toDate()),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: isDeleted
-                                            ? Colors.grey[500]
-                                            : isCurrentUser
-                                                ? Colors.white70
-                                                : Colors.grey,
-                                      ),
-                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (timestamp != null)
+                                        Text(
+                                          _formatTime(timestamp.toDate()),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: isDeleted
+                                                ? Colors.grey[500]
+                                                : isCurrentUser
+                                                    ? Colors.white70
+                                                    : Colors.grey,
+                                          ),
+                                        ),
+                                      if (isEdited && !isDeleted) ...[
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '(diedit)',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            color: isCurrentUser
+                                                ? Colors.white60
+                                                : Colors.grey[600],
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
